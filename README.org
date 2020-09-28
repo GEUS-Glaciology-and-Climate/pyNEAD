@@ -1,4 +1,4 @@
-#+TITLE: NEAD - New Environmental Archive Data
+#+TITLE: pyNEAD - Python interface to NEAD file format
 
 
 * Table of contents                               :toc_3:noexport:
@@ -14,7 +14,8 @@ Iosifescu Enescu, I., Bavay, M., Plattner, G.-K. (2020). Sharing and reusing met
 
 ** File format
 
-The NEAD file format is described in [[https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form][EBNF]] syntax in [[./EBNF.org]] and graphically at https://raw.githubusercontent.com/GEUS-PROMICE/NEAD/main/NEAD.svg 
+The NEAD file format is document at https://github.com/GEUS-PROMICE/NEAD
+
 * WARNING
 
 + This is alpha level software under development.
@@ -23,7 +24,7 @@ The NEAD file format is described in [[https://en.wikipedia.org/wiki/Extended_Ba
 * Installation
 
 #+BEGIN_SRC bash :results verbatim
-pip install git+https://github.com/mankoff/NEAD.git
+pip install git+https://github.com/GEUS-PROMICE/pyNEAD.git
 #+END_SRC
 
 Can be run in new environment, for example:
@@ -33,7 +34,7 @@ Conda:
 #+BEGIN_SRC bash :results verbatim
 conda create -n NEAD python=3.8 pandas numpy # jupyter
 conda activate NEAD
-pip install --upgrade git+https://github.com/mankoff/NEAD.git
+pip install --upgrade git+https://github.com/GEUS-PROMICE/pyNEAD.git
 #+END_SRC
 
 * Usage
