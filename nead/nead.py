@@ -19,16 +19,15 @@ def read(neadfile, MKS=None, **kw):
 
         while True:
             line = f.readline()
-
-            if line[0] == "\n": continue   # handle blank line
-            assert(line[0] == "#")
-            
             if line == "# [DATA]\n": break # done reading header
+            if line[0] == "\n": continue   # blank line
+            assert(line[0] == "#")         # if not blank, must start with "#"
             
             key_eq_val = line.split("#")[1].strip()
-            if key_eq_val == "": continue # handle "#" or "# " or "#   #" lines
+            if key_eq_val == "": continue  # Line is just "#" or "# " or "#   #"...
             assert("=" in key_eq_val)
-            key,val = [_.strip() for _ in key_eq_val.split("=")]
+            key = key_eq_val.split("=")[0].strip()
+            val = key_eq_val.split("=")[1].strip()
 
             if val.strip('-').strip('+').replace('.','').isdigit():
                 val = np.float(val)
