@@ -1,3 +1,2 @@
 
-from . import nead_io
-
+from .nead import read

@@ -2,7 +2,7 @@
 import numpy as np
 import pandas as pd
 
-def read_nead(neadfile, MKS=None, **kw):
+def read(neadfile, MKS=None, **kw):
 
     with open(neadfile) as f:
         fmt = f.readline();
@@ -51,6 +51,7 @@ def read_nead(neadfile, MKS=None, **kw):
             if type(attrs[key]) is not str:
                 continue
             if (CD in attrs[key]) & (len(attrs[key].split(CD)) == nfields):
+                # probably a column property, because it has enough CDs
                 attrs[key] = [_.strip() for _ in attrs[key].split(CD)]
                 # convert to numeric if only contains numbers
                 if all([str(s).strip('-').strip('+').replace('.','').isdigit() for s in attrs[key]]):
@@ -88,7 +89,7 @@ def read_nead(neadfile, MKS=None, **kw):
     df.attrs = attrs
     return df
 
-# def write_dsv(df, filename=None, header=None):
+# def write(df, filename=None, header=None):
 
 #     if header is None:
 
