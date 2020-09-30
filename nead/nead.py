@@ -60,6 +60,10 @@ def read(neadfile, MKS=None, **kw):
                         attrs[key] = attrs[key].astype(np.int)
                 else:
                     attrs[key] = np.array(attrs[key])
+                # finally, convert from array to dictionary based on the field property
+                if key != 'fields':
+                    attrs[key] = dict(zip(attrs['fields'],attrs[key]))
+                
 
     df = pd.read_csv(neadfile,
                      comment = "#",
@@ -72,16 +76,16 @@ def read(neadfile, MKS=None, **kw):
     if (MKS != False):
         assert('units_offset' in attrs.keys())
         assert('units_multiplier' in attrs.keys())
-        uo = attrs['units_offset']
-        um = attrs['units_multiplier']
+        uo = attrs['units_offset'].values()
+        um = attrs['units_multiplier'].values()
         df.columns = pd.MultiIndex.from_tuples(list(zip(df.columns, uo, um)), names=['name','uo','um'])
         df_n = df.select_dtypes(include='number')
         uo = df_n.columns.get_level_values('uo')
         um = df_n.columns.get_level_values('um')
 
-        if(attrs['nodata_value']): df_n = df_n.replace(attrs['nodata_value'],np.nan)
+        if('nodata' in attrs.keys()): df_n = df_n.replace(attrs['nodata'],np.nan)
         df_n = (df_n  * um) + uo
-        if(attrs['nodata_value']): df_n = df_n.replace(np.nan,attrs['nodata_value'])
+        if('nodata' in attrs.keys()): df_n = df_n.replace(np.nan,attrs['nodata'])
         
         for c in df_n.columns: df[c] = df_n[c] # move back over
         df.columns = df.columns.get_level_values('name')

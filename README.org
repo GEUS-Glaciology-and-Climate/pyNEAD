@@ -46,8 +46,8 @@ Read a NEAD file:
 
 #+NAME: nead-read-simple
 #+BEGIN_SRC jupyter-python :exports code
-import nead.nead_io as nead
-df = nead.read_nead("sample_csv.dsv")
+import nead
+df = nead.read("sample_csv.dsv")
 df.head()
 #+END_SRC
 
@@ -70,8 +70,8 @@ Do not convert to MKS units and also pass arguments to the Pandas [[https://pand
 
 #+NAME: nead-read-complex
 #+BEGIN_SRC jupyter-python :exports code
-import nead.nead_io as nead
-df = nead.read_nead("sample_csv.dsv", index_col=0, parse_dates=True, MKS=False)
+import nead
+df = nead.read("sample_csv.dsv", index_col=0, parse_dates=True, MKS=False)
 df.head()
 #+END_SRC
 
@@ -91,8 +91,8 @@ importlib.reload(nead)
 You can access the header properties in the =.attrs= dictionary.
 
 #+BEGIN_SRC jupyter-python :exports both
-import nead.nead_io as nead
-df = nead.read_nead("sample_csv.dsv", index_col=0, parse_dates=True, MKS=False)
+import nead
+df = nead.read("sample_csv.dsv", index_col=0, parse_dates=True, MKS=False)
 
 for key in df.attrs.keys():
   print(key, '=', df.attrs[key])
@@ -109,7 +109,7 @@ nodata = -999
 tz = 1
 column_delimiter = ,
 fields = ['timestamp' 'TA' 'RH' 'VW' 'ISWR']
-units_offset = [  0.   273.15   0.     0.     0.  ]
-units_multiplier = [1.   1.   0.01 1.   1.  ]
+units_offset = {'timestamp': 0.0, 'TA': 273.15, 'RH': 0.0, 'VW': 0.0, 'ISWR': 0.0}
+units_multiplier = {'timestamp': 1.0, 'TA': 1.0, 'RH': 0.01, 'VW': 1.0, 'ISWR': 1.0}
 #+end_example
 
