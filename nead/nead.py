@@ -72,7 +72,7 @@ def read(neadfile, MKS=None, **kw):
 
     # # convert to MKS by adding units_offset and units_multiplier to a
     # # multi-header, selecting numeric columns, and converting.
-    if (MKS != False):
+    if (MKS == True):
         assert('units_offset' in attrs.keys())
         assert('units_multiplier' in attrs.keys())
         uo = attrs['units_offset'].values()
