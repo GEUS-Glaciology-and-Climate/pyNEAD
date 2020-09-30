@@ -75,19 +75,10 @@ def read(neadfile, MKS=None, **kw):
     if (MKS == True):
         assert('units_offset' in attrs.keys())
         assert('units_multiplier' in attrs.keys())
-        uo = attrs['units_offset'].values()
-        um = attrs['units_multiplier'].values()
-        df.columns = pd.MultiIndex.from_tuples(list(zip(df.columns, uo, um)), names=['name','uo','um'])
-        df_n = df.select_dtypes(include='number')
-        uo = df_n.columns.get_level_values('uo')
-        um = df_n.columns.get_level_values('um')
-
-        if('nodata' in attrs.keys()): df_n = df_n.replace(attrs['nodata'],np.nan)
-        df_n = (df_n  * um) + uo
-        if('nodata' in attrs.keys()): df_n = df_n.replace(np.nan,attrs['nodata'])
-        
-        for c in df_n.columns: df[c] = df_n[c] # move back over
-        df.columns = df.columns.get_level_values('name')
+        for c in df.columns:
+            if df[c].dtype.kind in ['i','f']:
+                df[c] = (df[c] * attrs['units_multiplier'][c]) + attrs['units_offset'][c]
+        if('nodata' in attrs.keys()): df = df.replace(np.nan, attrs['nodata'])
 
     df.attrs = attrs
     return df
