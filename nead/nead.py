@@ -70,14 +70,14 @@ def read(neadfile, MKS=None, **kw):
                      names = attrs['fields'],
                      **kw)
 
-    # # convert to MKS by adding units_offset and units_multiplier to a
+    # # convert to MKS by adding add_value and scale_factor to a
     # # multi-header, selecting numeric columns, and converting.
     if (MKS == True):
-        assert('units_offset' in attrs.keys())
-        assert('units_multiplier' in attrs.keys())
+        assert('add_value' in attrs.keys())
+        assert('scale_factor' in attrs.keys())
         for c in df.columns:
             if df[c].dtype.kind in ['i','f']:
-                df[c] = (df[c] * attrs['units_multiplier'][c]) + attrs['units_offset'][c]
+                df[c] = (df[c] * attrs['scale_factor'][c]) + attrs['add_value'][c]
         if('nodata' in attrs.keys()): df = df.replace(np.nan, attrs['nodata'])
 
     df.attrs = attrs
