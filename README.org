@@ -47,17 +47,18 @@ Read a NEAD file:
 #+NAME: nead-read-simple
 #+BEGIN_SRC jupyter-python :exports code
 import nead
-df = nead.read("sample_csv.dsv")
+df = nead.read("sample_csv.dsv", multi_index=False)
 df.head()
 #+END_SRC
 
+#+NAME: nead-read-simple
 #+BEGIN_SRC jupyter-python :exports results
 import importlib
 importlib.reload(nead)
 <<nead-read-simple>>
 #+END_SRC
 
-#+RESULTS:
+#+RESULTS: nead-read-simple
 |   | timestamp           |  TA | RH |  VW | ISWR |
 |---+---------------------+-----+----+-----+------|
 | 0 | 2010-06-22T12:00:00 |   2 | 52 | 1.2 |  320 |
@@ -69,35 +70,45 @@ Convert to MKS units and also pass arguments to the Pandas [[https://pandas.pyda
 #+NAME: nead-read-complex
 #+BEGIN_SRC jupyter-python :exports code
 import nead
-df = nead.read("sample_csv.dsv", MKS=True, index_col=0, parse_dates=True)
+df = nead.read("sample_csv.dsv", MKS=True, multi_index=False, index_col=0)
 df.head()
 #+END_SRC
 
+#+NAME: nead-read-complex
 #+BEGIN_SRC jupyter-python  :exports results
 import importlib
 importlib.reload(nead)
 <<nead-read-complex>>
 #+END_SRC
 
-#+RESULTS:
+#+RESULTS: nead-read-complex
 | timestamp           |     TA |   RH |  VW | ISWR |
 |---------------------+--------+------+-----+------|
-| 2010-06-22 12:00:00 | 275.15 | 0.52 | 1.2 |  320 |
-| 2010-06-22 13:00:00 | 276.15 |  0.6 | 2.4 |  340 |
-| 2010-06-22 14:00:00 | 275.95 | 0.56 |   2 |  330 |
+| 2010-06-22T12:00:00 | 275.15 | 0.52 | 1.2 |  320 |
+| 2010-06-22T13:00:00 | 276.15 |  0.6 | 2.4 |  340 |
+| 2010-06-22T14:00:00 | 275.95 | 0.56 |   2 |  330 |
 
 You can access the header properties in the =.attrs= dictionary.
 
 #+BEGIN_SRC jupyter-python :exports both
 import nead
-df = nead.read("sample_csv.dsv", index_col=0, parse_dates=True, MKS=False)
-
+df = nead.read("sample_csv.dsv", index_col=0)
+print(df.head())
+print("")
 for key in df.attrs.keys():
   print(key, '=', df.attrs[key])
 #+END_SRC
 
 #+RESULTS:
 #+begin_example
+fields                  TA     RH     VW   ISWR
+add_value           273.15   0.00   0.00   0.00  
+scale_factor          1.00   0.01   1.00   1.00
+timestamp                                      
+2010-06-22T12:00:00    2.0     52    1.2  320.0
+2010-06-22T13:00:00    3.0     60    2.4  340.0
+2010-06-22T14:00:00    2.8     56    2.0  330.0
+
 __format__ = NEAD 1.0 UTF-8
 station_id = test_station
 latitude = 46.5
@@ -105,9 +116,5 @@ longitude = 9.8
 altitude = 1500
 nodata = -999
 tz = 1
-column_delimiter = ,
-fields = ['timestamp' 'TA' 'RH' 'VW' 'ISWR']
-units_offset = {'timestamp': 0.0, 'TA': 273.15, 'RH': 0.0, 'VW': 0.0, 'ISWR': 0.0}
-units_multiplier = {'timestamp': 1.0, 'TA': 1.0, 'RH': 0.01, 'VW': 1.0, 'ISWR': 1.0}
+field_delimiter = ,
 #+end_example
-

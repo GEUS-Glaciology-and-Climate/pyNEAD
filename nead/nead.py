@@ -2,7 +2,7 @@
 import numpy as np
 import pandas as pd
 
-def read(neadfile, MKS=None, **kw):
+def read(neadfile, MKS=None, multi_index=True, index_col=None, **kw):
 
     with open(neadfile) as f:
         fmt = f.readline();
@@ -43,44 +43,75 @@ def read(neadfile, MKS=None, **kw):
 
         # first split the fields field.
         assert("fields" in attrs.keys())
-        nfields = len(attrs['fields'].split(FD))
+        mi = {} # multi-index collector
+        mi['fields'] = [_.strip() for _ in attrs.pop('fields').split(FD)]
+        nfields = len(mi['fields'])
 
         # Now split all other fields that contain FD and the same number of FD as fields
-        for key in attrs.keys():
+        attr_keys = list(attrs.keys()) # don't iterate on this, so we can pop()
+        for key in attr_keys:
             if type(attrs[key]) is not str:
                 continue
             if (FD in attrs[key]) & (len(attrs[key].split(FD)) == nfields):
-                # probably a column property, because it has enough FDs
-                attrs[key] = [_.strip() for _ in attrs[key].split(FD)]
+                # probably a column property, because it has the correct number of FDs
+                arr = [_.strip() for _ in attrs.pop(key).split(FD)]
                 # convert to numeric if only contains numbers
-                if all([str(s).strip('-').strip('+').replace('.','').isdigit() for s in attrs[key]]):
-                    attrs[key] = np.array(attrs[key]).astype(np.float)
-                    if all(attrs[key] == attrs[key].astype(np.int)):
-                        attrs[key] = attrs[key].astype(np.int)
-                else:
-                    attrs[key] = np.array(attrs[key])
-                # finally, convert from array to dictionary based on the field property
-                if key != 'fields':
-                    attrs[key] = dict(zip(attrs['fields'],attrs[key]))
-                
+                if all([str(s).strip('-').strip('+').replace('.','').isdigit() for s in arr]):
+                    arr = np.array(arr).astype(np.float)
+                    if all(arr == arr.astype(np.int)):
+                        arr = arr.astype(np.int)
+                mi[key] = arr
 
+               
+    mindex = pd.MultiIndex.from_arrays([_ for _ in mi.values()],
+                                       names=[_ for _ in mi.keys()])
     df = pd.read_csv(neadfile,
                      comment = "#",
                      sep = attrs['field_delimiter'],
-                     names = attrs['fields'],
-                     **kw)
+                     names = mindex,
+                     parse_dates = True)
 
-    # # convert to MKS by adding add_value and scale_factor to a
-    # # multi-header, selecting numeric columns, and converting.
+    # some sort of bug (?) - the colum "names" are dropped from the multiindex,
+    # so the follow line adds them back.
+    df.columns = mindex
+
+    # convert to MKS by adding add_value and scale_factor to a
+    # multi-header, selecting numeric columns, and converting.
     if (MKS == True):
-        assert('add_value' in attrs.keys())
-        assert('scale_factor' in attrs.keys())
-        for c in df.columns:
+        assert('add_value' in df.columns.names)
+        assert('scale_factor' in df.columns.names)
+        for i,c in enumerate(df.columns):
             if df[c].dtype.kind in ['i','f']:
-                df[c] = (df[c] * attrs['scale_factor'][c]) + attrs['add_value'][c]
+                df[c] = (df[c] * df.columns.get_level_values('scale_factor')[i]) + \
+                    df.columns.get_level_values('add_value')[i]
         if('nodata' in attrs.keys()): df = df.replace(np.nan, attrs['nodata'])
 
+    # If we pass kws to read_csv above, it causes issues. For example, if index_col
+    # is set, I now need to figure out which column(s?) that is/are and handle all
+    # the other metadata that is per-column values. Instead, I find it easier to read
+    # in the data 1x simply, build the multiindex header, and then write-and-read (via
+    # memory) a second time to better parse all of the per-column values. This has
+    # memory and speed implications for large files...
+    #
+    # For now this is only tested on the 'index_col' keyword passed to Pandas.
+    # if bool(kw): # some **kw was set.
+    if index_col is not None:
+        cname = df.columns.get_level_values("fields")[index_col]
+        df = df.set_index(df.columns[index_col])
+        df.index.name = cname
+        # from io import StringIO
+        # n = df.columns.names
+        # df = pd.read_csv(StringIO(df.to_csv(index=False)),
+        #                  header = list(np.arange(df.columns.nlevels)),
+        #                  **kw)
+        # df.columns.names = n
+
+
+    if multi_index == False: df.columns = df.columns.droplevel(list(np.arange(1,df.columns.nlevels)))
+        
+    # Finally, attach all the non-column metadata to the attrs dictionary.
     df.attrs = attrs
+    
     return df
 
 # def write(df, filename=None, header=None):

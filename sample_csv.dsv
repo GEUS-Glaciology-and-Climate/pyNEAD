@@ -8,8 +8,8 @@
 # tz     = +01
 # field_delimiter   = ,
 # fields            = timestamp, TA, RH, VW, ISWR
-# units_offset      = 0, 273.15, 0, 0, 0
-# units_multiplier  = 1, 1, 0.01, 1, 1
+# add_value         = 0, 273.15, 0, 0, 0
+# scale_factor      = 1, 1, 0.01, 1, 1
 # [DATA]
 2010-06-22T12:00:00,   2.0,  52,  1.2,  320.
 2010-06-22T13:00:00,   3.0,  60,  2.4,  340.
