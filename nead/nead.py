@@ -37,21 +37,21 @@ def read(neadfile, MKS=None, **kw):
             attrs[key] = val
         # done reading header
 
-        ## split everything on the column delimiter (CD) that uses or appears to use the CD.
-        assert("column_delimiter" in attrs.keys())
-        CD = attrs["column_delimiter"]
+        ## split everything on the field delimiter (FD) that uses or appears to use the FD.
+        assert("field_delimiter" in attrs.keys())
+        FD = attrs["field_delimiter"]
 
         # first split the fields field.
         assert("fields" in attrs.keys())
-        nfields = len(attrs['fields'].split(CD))
+        nfields = len(attrs['fields'].split(FD))
 
-        # Now split all other fields that contain CD and the same number of CD as fields
+        # Now split all other fields that contain FD and the same number of FD as fields
         for key in attrs.keys():
             if type(attrs[key]) is not str:
                 continue
-            if (CD in attrs[key]) & (len(attrs[key].split(CD)) == nfields):
-                # probably a column property, because it has enough CDs
-                attrs[key] = [_.strip() for _ in attrs[key].split(CD)]
+            if (FD in attrs[key]) & (len(attrs[key].split(FD)) == nfields):
+                # probably a column property, because it has enough FDs
+                attrs[key] = [_.strip() for _ in attrs[key].split(FD)]
                 # convert to numeric if only contains numbers
                 if all([str(s).strip('-').strip('+').replace('.','').isdigit() for s in attrs[key]]):
                     attrs[key] = np.array(attrs[key]).astype(np.float)
@@ -66,7 +66,7 @@ def read(neadfile, MKS=None, **kw):
 
     df = pd.read_csv(neadfile,
                      comment = "#",
-                     sep = attrs['column_delimiter'],
+                     sep = attrs['field_delimiter'],
                      names = attrs['fields'],
                      **kw)
 
@@ -91,14 +91,14 @@ def read(neadfile, MKS=None, **kw):
 
 #         # convert column delimiter to both NEAD(human) and computer-useful values
 #         cds = {'\\s':"space", '\\s+':"whitespace", '\t':"tab"}
-#         cd = df.attrs["column_delimiter"]
+#         cd = df.attrs["field_delimiter"]
 #         sepstr = cds[cd] if cd in cds.keys() else cd
-#         df.attrs.pop("column_delimiter") # we'll write it manually at top
+#         df.attrs.pop("field_delimiter") # we'll write it manually at top
 
 #         header = '# NEAD 1.0 UTF-8\n'
 #         header += '# [HEADER]\n'
 #         header += '## Written by pyNEAD\n'
-#         header += '# column_delimiter = ' + sepstr + '\n'
+#         header += '# field_delimiter = ' + sepstr + '\n'
 
 #         for key in df.attrs:
 #             if isinstance(df.attrs[key], list):
