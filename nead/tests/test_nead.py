@@ -4,17 +4,18 @@ import numpy as np
 
 import nead
 
+fname = "sample.csv"
 
 def test_read_MKS():
-    ds = nead.read("sample_csv.dsv", index_col=0, MKS=True)
+    ds = nead.read(fname, index_col=0, MKS=True)
     assert(np.all(ds['TA'].values == [275.15, 276.15, 275.95]))
 
 def test_read_attrs():
-    ds = nead.read("sample_csv.dsv", index_col=0, MKS=True)
+    ds = nead.read(fname, index_col=0, MKS=True)
     assert(ds['RH'].scale_factor == 0.01)
     
 def test_print():
-    ds = nead.read("sample_csv.dsv", index_col=0)
+    ds = nead.read(fname, index_col=0)
     print(ds)
     
 # def test_read_format():
