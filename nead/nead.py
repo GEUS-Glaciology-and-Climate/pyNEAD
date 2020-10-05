@@ -70,8 +70,7 @@ def read(neadfile, MKS=None, multi_index=True, index_col=None):
     df = pd.read_csv(neadfile,
                      comment = "#",
                      sep = FD,
-                     names = fields,
-                     parse_dates = True)
+                     names = fields)
 
     ds = df.to_xarray()
 
@@ -109,10 +108,10 @@ def read(neadfile, MKS=None, multi_index=True, index_col=None):
     # Set index_col if requested
     if index_col != None:
         colname = list(ds.keys())[index_col]
-        ds = ds.set_coords(colname)
+        # ds = ds.set_coords(colname)
         ds = ds.swap_dims({'index':colname}).reset_coords(names='index', drop=True)
-
-
+        ds[colname] = ds[colname].astype(np.datetime64)
+            
     # Clean up.
     if('nodata' in ds.attrs.keys()): ds = ds.where(ds != ds.attrs['nodata'])
 
