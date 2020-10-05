@@ -1,9 +1,35 @@
-
+"""
+A Python module for reading and writing NEAD files
+"""
 import numpy as np
 import pandas as pd
 
 def read(neadfile, MKS=None, multi_index=True, index_col=None, **kw):
+    """Read a NEAD file
 
+    PARAMETERS
+    ----------
+    file: string
+        Path to NEAD-formatted file
+
+
+    KEYWORDS
+    --------
+    multi_index: boolean (default: True)
+        Use NEAD per-column properties to make a Pandas multi-index header
+        If set to false, header is only the `fields` property.
+    index_col: integer
+        Use column as index (see Pandas read_csv index_col keyword)
+    MKS: boolean (default: False)
+        Convert values using `scale_factor` and `add_offset`
+
+    
+    RETURNS
+    -------
+    A Pandas dataframe.
+        NEAD per-column properties make a Pandas multi-index header
+        NEAD single-value properties are encoded in a dictionary in the .attrs property
+    """
     with open(neadfile) as f:
         fmt = f.readline();
         assert(fmt[0] == "#")
