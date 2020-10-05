@@ -73,6 +73,23 @@ Attributes:
     field_delimiter:  ,
 #+end_example
 
+Ignore all the metadata and work with a Pandas dataframe:
+
+#+BEGIN_SRC jupyter-python :exports code
+import nead
+ds = nead.read("sample_csv.dsv", index_col=0)
+df = ds.to_dataframe()
+df
+#+END_SRC
+
+#+RESULTS:
+| timestamp           |  TA | RH |  VW | ISWR |
+|---------------------+-----+----+-----+------|
+| 2010-06-22T12:00:00 |   2 | 52 | 1.2 |  320 |
+| 2010-06-22T13:00:00 |   3 | 60 | 2.4 |  340 |
+| 2010-06-22T14:00:00 | 2.8 | 56 |   2 |  330 |
+
+
 Convert to MKS units and also pass arguments to the Pandas [[https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html][read_csv]] command:
 
 #+NAME: nead-read-complex
