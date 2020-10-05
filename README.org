@@ -47,7 +47,7 @@ Read a NEAD file:
 #+NAME: nead-read-simple
 #+BEGIN_SRC jupyter-python :exports code
 import nead
-ds = nead.read("sample_csv.dsv")
+ds = nead.read("sample.csv")
 print(ds)
 #+END_SRC
 
@@ -77,7 +77,7 @@ Ignore all the metadata and work with a Pandas dataframe:
 
 #+BEGIN_SRC jupyter-python :exports code
 import nead
-ds = nead.read("sample_csv.dsv", index_col=0)
+ds = nead.read("sample.csv", index_col=0)
 df = ds.to_dataframe()
 df
 #+END_SRC
@@ -85,9 +85,9 @@ df
 #+RESULTS:
 | timestamp           |  TA | RH |  VW | ISWR |
 |---------------------+-----+----+-----+------|
-| 2010-06-22T12:00:00 |   2 | 52 | 1.2 |  320 |
-| 2010-06-22T13:00:00 |   3 | 60 | 2.4 |  340 |
-| 2010-06-22T14:00:00 | 2.8 | 56 |   2 |  330 |
+| 2010-06-22 12:00:00 |   2 | 52 | 1.2 |  320 |
+| 2010-06-22 13:00:00 |   3 | 60 | 2.4 |  340 |
+| 2010-06-22 14:00:00 | 2.8 | 56 |   2 |  330 |
 
 
 Convert to MKS units and also pass arguments to the Pandas [[https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html][read_csv]] command:
@@ -95,7 +95,7 @@ Convert to MKS units and also pass arguments to the Pandas [[https://pandas.pyda
 #+NAME: nead-read-complex
 #+BEGIN_SRC jupyter-python :exports code
 import nead
-ds = nead.read("sample_csv.dsv", MKS=True, index_col=0)
+ds = nead.read("sample.csv", MKS=True, index_col=0)
 print(ds)
 #+END_SRC
 
@@ -104,7 +104,7 @@ print(ds)
 <xarray.Dataset>
 Dimensions:    (timestamp: 3)
 Coordinates:
-  ,* timestamp  (timestamp) object '2010-06-22T12:00:00' ... '2010-06-22T14:00...
+  ,* timestamp  (timestamp) datetime64[ns] 2010-06-22T12:00:00 ... 2010-06-22T...
 Data variables:
     TA         (timestamp) float64 275.1 276.1 275.9
     RH         (timestamp) float64 0.52 0.6 0.56
@@ -126,7 +126,7 @@ Details about one variable:
 
 #+BEGIN_SRC jupyter-python :exports both
 import nead
-ds = nead.read("sample_csv.dsv", index_col=0)
+ds = nead.read("sample.csv", index_col=0)
 print(ds['TA'])
 #+END_SRC
 
@@ -134,7 +134,7 @@ print(ds['TA'])
 : <xarray.DataArray 'TA' (timestamp: 3)>
 : array([2. , 3. , 2.8])
 : Coordinates:
-:   * timestamp  (timestamp) object '2010-06-22T12:00:00' ... '2010-06-22T14:00...
+:   * timestamp  (timestamp) datetime64[ns] 2010-06-22T12:00:00 ... 2010-06-22T...
 : Attributes:
 :     add_value:     273.15
 :     scale_factor:  1.0

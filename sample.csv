@@ -1,5 +1,5 @@
 # NEAD 1.0 UTF-8
-# [HEADER]
+# [METADATA]
 # station_id = test_station
 # latitude   = 46.5
 # longitude  = 9.8
@@ -7,6 +7,7 @@
 # nodata = -999
 # tz     = +01
 # field_delimiter   = ,
+# [FIELDS]
 # fields            = timestamp, TA, RH, VW, ISWR
 # add_value         = 0, 273.15, 0, 0, 0
 # scale_factor      = 1, 1, 0.01, 1, 1

@@ -26,23 +26,27 @@ def read(neadfile, MKS=None, multi_index=True, index_col=None):
     """
 
 
-    # Read in the header data to dictionary 'hdr'
     with open(neadfile) as f:
         fmt = f.readline();
         assert(fmt[0] == "#")
-        assert(fmt.split("#")[1].strip() == "NEAD 1.0 UTF-8")
+        assert(fmt.split("#")[1].split()[0] == "NEAD")
+        assert(fmt.split("#")[1].split()[1] == "1.0")
+        assert(fmt.split("#")[1].split()[2] == "UTF-8")
         
-        hdr = f.readline()
-        assert(hdr[0] == "#")
-        assert(hdr.split("#")[1].strip() == "[HEADER]")
+        line = f.readline()
+        assert(line[0] == "#")
+        assert(line.split("#")[1].strip() == '[METADATA]')
 
-        line = ""
-        hdr = {}
-        # hdr["__format__"] = fmt.split("#")[1].strip()
-
+        meta = {}
+        fields = {}
+        section = 'meta'
         while True:
             line = f.readline()
             if line == "# [DATA]\n": break # done reading header
+            if line == "# [FIELDS]\n":
+                section = 'fields'
+                continue # done reading header
+            
             if line[0] == "\n": continue   # blank line
             assert(line[0] == "#")         # if not blank, must start with "#"
             
@@ -57,49 +61,44 @@ def read(neadfile, MKS=None, multi_index=True, index_col=None):
                 val = np.float(val)
                 if val == np.int(val):
                     val = np.int(val)
-            
-            hdr[key] = val
+
+            if section == 'meta': meta[key] = val
+            if section == 'fields': fields[key] = val
     # done reading header
 
     # Find delimiter and fields for reading NEAD as simple CSV
-    assert("field_delimiter" in hdr.keys())
-    assert("fields" in hdr.keys())
-    FD = hdr["field_delimiter"]
-    fields = [_.strip() for _ in hdr.pop('fields').split(FD)]
+    assert("field_delimiter" in meta.keys())
+    assert("fields" in fields.keys())
+    FD = meta["field_delimiter"]
+    names = [_.strip() for _ in fields.pop('fields').split(FD)]
 
     df = pd.read_csv(neadfile,
                      comment = "#",
                      sep = FD,
-                     names = fields)
+                     names = names)
 
     ds = df.to_xarray()
+    ds.attrs = meta
 
     # For each of the per-field properties, add as attributes to that variable.
-    # We guess at the per-field properties: Uses FD and has the right number of FDs
-    # If it isn't a string of [val FD val FD ...] then store it as a global attribute.
-    for key in hdr.keys():
-        if type(hdr[key]) is not str: # single int or float (?) per code above
-            ds.attrs[key] = hdr[key]
-        elif (FD in hdr[key]) & (len(hdr[key].split(FD)) == len(fields)):
-            # probably a column property, because it has the correct number of FDs
-            arr = [_.strip() for _ in hdr[key].split(FD)]
-            # convert to numeric if only contains numbers
-            if all([str(s).strip('-').strip('+').replace('.','').isdigit() for s in arr]):
-                arr = np.array(arr).astype(np.float)
-                if all(arr == arr.astype(np.int)):
-                    arr = arr.astype(np.int)
+    for key in fields.keys():
+        assert(len(fields[key].split(FD)) == len(names))
+        arr = [_.strip() for _ in fields[key].split(FD)]
+        # convert to numeric if only contains numbers
+        if all([str(s).strip('-').strip('+').replace('.','').isdigit() for s in arr]):
+            arr = np.array(arr).astype(np.float)
+            if all(arr == arr.astype(np.int)):
+                arr = arr.astype(np.int)
                     
-            for i,v in enumerate(ds.data_vars):
-                # print(i,v)
-                ds[v].attrs[key] = arr[i]
-        else:
-            ds.attrs[key] = hdr[key]
+        for i,v in enumerate(ds.data_vars):
+            # print(i,v)
+            ds[v].attrs[key] = arr[i]
                 
 
     # Convert to MKS if requested
     if MKS == True:
-        assert("scale_factor" in hdr.keys())
-        assert("add_value" in hdr.keys())
+        assert("scale_factor" in fields.keys())
+        assert("add_value" in fields.keys())
         for v in list(ds.keys()):
             if ds[v].dtype.kind in ['i','f']:
                 ds[v] = (ds[v] * ds[v].scale_factor) + ds[v].add_value
