@@ -3,8 +3,10 @@ A Python module for reading and writing NEAD files
 """
 import numpy as np
 import pandas as pd
+import xarray as xr
+xr.set_options(keep_attrs=True)
 
-def read(neadfile, MKS=None, multi_index=True, index_col=None, **kw):
+def read(neadfile, MKS=None, multi_index=True, index_col=None):
     """Read a NEAD file
 
     PARAMETERS
@@ -15,21 +17,16 @@ def read(neadfile, MKS=None, multi_index=True, index_col=None, **kw):
 
     KEYWORDS
     --------
-    multi_index: boolean (default: True)
-        Use NEAD per-column properties to make a Pandas multi-index header
-        If set to false, header is only the `fields` property.
     index_col: integer
-        Use column as index (see Pandas read_csv index_col keyword)
-    MKS: boolean (default: False)
-        Convert values using `scale_factor` and `add_offset`
-
+        Use column as index
     
     RETURNS
     -------
-    A Pandas dataframe.
-        NEAD per-column properties make a Pandas multi-index header
-        NEAD single-value properties are encoded in a dictionary in the .attrs property
+    An xarray dataset.
     """
+
+
+    # Read in the header data to dictionary 'hdr'
     with open(neadfile) as f:
         fmt = f.readline();
         assert(fmt[0] == "#")
@@ -40,8 +37,8 @@ def read(neadfile, MKS=None, multi_index=True, index_col=None, **kw):
         assert(hdr.split("#")[1].strip() == "[HEADER]")
 
         line = ""
-        attrs = {}
-        attrs["__format__"] = fmt.split("#")[1].strip()
+        hdr = {}
+        # hdr["__format__"] = fmt.split("#")[1].strip()
 
         while True:
             line = f.readline()
@@ -55,120 +52,68 @@ def read(neadfile, MKS=None, multi_index=True, index_col=None, **kw):
             key = key_eq_val.split("=")[0].strip()
             val = key_eq_val.split("=")[1].strip()
 
+            # Convert from string to number if it is a number
             if val.strip('-').strip('+').replace('.','').isdigit():
                 val = np.float(val)
                 if val == np.int(val):
                     val = np.int(val)
             
-            attrs[key] = val
-        # done reading header
+            hdr[key] = val
+    # done reading header
 
-        ## split everything on the field delimiter (FD) that uses or appears to use the FD.
-        assert("field_delimiter" in attrs.keys())
-        FD = attrs["field_delimiter"]
+    # Find delimiter and fields for reading NEAD as simple CSV
+    assert("field_delimiter" in hdr.keys())
+    assert("fields" in hdr.keys())
+    FD = hdr["field_delimiter"]
+    fields = [_.strip() for _ in hdr.pop('fields').split(FD)]
 
-        # first split the fields field.
-        assert("fields" in attrs.keys())
-        mi = {} # multi-index collector
-        mi['fields'] = [_.strip() for _ in attrs.pop('fields').split(FD)]
-        nfields = len(mi['fields'])
-
-        # Now split all other fields that contain FD and the same number of FD as fields
-        attr_keys = list(attrs.keys()) # don't iterate on this, so we can pop()
-        for key in attr_keys:
-            if type(attrs[key]) is not str:
-                continue
-            if (FD in attrs[key]) & (len(attrs[key].split(FD)) == nfields):
-                # probably a column property, because it has the correct number of FDs
-                arr = [_.strip() for _ in attrs.pop(key).split(FD)]
-                # convert to numeric if only contains numbers
-                if all([str(s).strip('-').strip('+').replace('.','').isdigit() for s in arr]):
-                    arr = np.array(arr).astype(np.float)
-                    if all(arr == arr.astype(np.int)):
-                        arr = arr.astype(np.int)
-                mi[key] = arr
-
-               
-    mindex = pd.MultiIndex.from_arrays([_ for _ in mi.values()],
-                                       names=[_ for _ in mi.keys()])
     df = pd.read_csv(neadfile,
                      comment = "#",
-                     sep = attrs['field_delimiter'],
-                     names = mindex,
+                     sep = FD,
+                     names = fields,
                      parse_dates = True)
 
-    # some sort of bug (?) - the colum "names" are dropped from the multiindex,
-    # so the follow line adds them back.
-    df.columns = mindex
+    ds = df.to_xarray()
 
-    # convert to MKS by adding add_value and scale_factor to a
-    # multi-header, selecting numeric columns, and converting.
-    if (MKS == True):
-        assert('add_value' in df.columns.names)
-        assert('scale_factor' in df.columns.names)
-        for i,c in enumerate(df.columns):
-            if df[c].dtype.kind in ['i','f']:
-                df[c] = (df[c] * df.columns.get_level_values('scale_factor')[i]) + \
-                    df.columns.get_level_values('add_value')[i]
-        if('nodata' in attrs.keys()): df = df.replace(np.nan, attrs['nodata'])
+    # For each of the per-field properties, add as attributes to that variable.
+    # We guess at the per-field properties: Uses FD and has the right number of FDs
+    # If it isn't a string of [val FD val FD ...] then store it as a global attribute.
+    for key in hdr.keys():
+        if type(hdr[key]) is not str: # single int or float (?) per code above
+            ds.attrs[key] = hdr[key]
+        elif (FD in hdr[key]) & (len(hdr[key].split(FD)) == len(fields)):
+            # probably a column property, because it has the correct number of FDs
+            arr = [_.strip() for _ in hdr[key].split(FD)]
+            # convert to numeric if only contains numbers
+            if all([str(s).strip('-').strip('+').replace('.','').isdigit() for s in arr]):
+                arr = np.array(arr).astype(np.float)
+                if all(arr == arr.astype(np.int)):
+                    arr = arr.astype(np.int)
+                    
+            for i,v in enumerate(ds.data_vars):
+                # print(i,v)
+                ds[v].attrs[key] = arr[i]
+        else:
+            ds.attrs[key] = hdr[key]
+                
 
-    # If we pass kws to read_csv above, it causes issues. For example, if index_col
-    # is set, I now need to figure out which column(s?) that is/are and handle all
-    # the other metadata that is per-column values. Instead, I find it easier to read
-    # in the data 1x simply, build the multiindex header, and then write-and-read (via
-    # memory) a second time to better parse all of the per-column values. This has
-    # memory and speed implications for large files...
-    #
-    # For now this is only tested on the 'index_col' keyword passed to Pandas.
-    # if bool(kw): # some **kw was set.
-    if index_col is not None:
-        cname = df.columns.get_level_values("fields")[index_col]
-        df = df.set_index(df.columns[index_col])
-        df.index.name = cname
-        # from io import StringIO
-        # n = df.columns.names
-        # df = pd.read_csv(StringIO(df.to_csv(index=False)),
-        #                  header = list(np.arange(df.columns.nlevels)),
-        #                  **kw)
-        # df.columns.names = n
+    # Convert to MKS if requested
+    if MKS == True:
+        assert("scale_factor" in hdr.keys())
+        assert("add_value" in hdr.keys())
+        for v in list(ds.keys()):
+            if ds[v].dtype.kind in ['i','f']:
+                ds[v] = (ds[v] * ds[v].scale_factor) + ds[v].add_value
 
 
-    if multi_index == False: df.columns = df.columns.droplevel(list(np.arange(1,df.columns.nlevels)))
-        
-    # Finally, attach all the non-column metadata to the attrs dictionary.
-    df.attrs = attrs
-    
-    return df
+    # Set index_col if requested
+    if index_col != None:
+        colname = list(ds.keys())[index_col]
+        ds = ds.set_coords(colname)
+        ds = ds.swap_dims({'index':colname}).reset_coords(names='index', drop=True)
 
-# def write(df, filename=None, header=None):
 
-#     if header is None:
+    # Clean up.
+    if('nodata' in ds.attrs.keys()): ds = ds.where(ds != ds.attrs['nodata'])
 
-#         assert(df.attrs is not None)
-
-#         # convert column delimiter to both NEAD(human) and computer-useful values
-#         cds = {'\\s':"space", '\\s+':"whitespace", '\t':"tab"}
-#         cd = df.attrs["field_delimiter"]
-#         sepstr = cds[cd] if cd in cds.keys() else cd
-#         df.attrs.pop("field_delimiter") # we'll write it manually at top
-
-#         header = '# NEAD 1.0 UTF-8\n'
-#         header += '# [HEADER]\n'
-#         header += '## Written by pyNEAD\n'
-#         header += '# field_delimiter = ' + sepstr + '\n'
-
-#         for key in df.attrs:
-#             if isinstance(df.attrs[key], list):
-#                 header += '# ' + key + ' = ' + " ".join(str(i) for i in df.attrs[key]) + '\n'
-#             else:
-#                 header += '# ' + key + ' = ' + str(df.attrs[key]) + '\n'
-#         header += '# [DATA]\n'
-
-#     # Conert datetime columns to ISO-8601 format
-#     for c in df.columns:
-#         if df[c].dtype == "datetime64":
-#             df[c] = df[c].strftime('%Y-%m-%dT%H:%M:%S')
-            
-#     with open(filename, "w") as f:
-#         f.write(header)
-#         f.write(df.to_csv(header=False, sep=sep))
+    return ds
