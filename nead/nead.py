@@ -85,8 +85,10 @@ def read(neadfile, MKS=None, multi_index=True, index_col=None):
         assert(len(fields[key].split(FD)) == len(names))
         arr = [_.strip() for _ in fields[key].split(FD)]
         # convert to numeric if only contains numbers
-        if all([str(s).strip('-').strip('+').replace('.','').isdigit() for s in arr]):
-            arr = np.array(arr).astype(np.float)
+        if all([str(s).strip('-').strip('+').replace('.','').isdigit() or str(s) == "" for s in arr]):
+            arr = np.array(arr).astype("<U32")
+            arr[arr == ""] = 'nan'
+            arr = arr.astype(np.float)
             if all(arr == arr.astype(np.int)):
                 arr = arr.astype(np.int)
                     
