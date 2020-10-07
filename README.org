@@ -69,7 +69,7 @@ Attributes:
     longitude:        9.8
     altitude:         1500
     nodata:           -999
-    tz:               1
+    timezone:         1
     field_delimiter:  ,
 #+end_example
 
@@ -116,7 +116,7 @@ Attributes:
     longitude:        9.8
     altitude:         1500
     nodata:           -999
-    tz:               1
+    timezone:         1
     field_delimiter:  ,
 #+end_example
 
@@ -161,5 +161,6 @@ for k in ds.attrs.keys():
 : longitude  :  9.8
 : altitude  :  1500
 : nodata  :  -999
-: tz  :  1
+: timezone  :  1
 : field_delimiter  :  ,
+

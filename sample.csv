@@ -4,8 +4,8 @@
 # latitude   = 46.5
 # longitude  = 9.8
 # altitude   = 1500
-# nodata = -999
-# tz     = +01
+# nodata     = -999
+# timezone   = +01
 # field_delimiter   = ,
 # [FIELDS]
 # fields            = timestamp, TA, RH, VW, ISWR
