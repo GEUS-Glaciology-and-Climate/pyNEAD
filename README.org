@@ -78,8 +78,7 @@ Ignore all the metadata and work with a Pandas dataframe:
 #+BEGIN_SRC jupyter-python :exports code
 import nead
 ds = nead.read("sample.csv", index_col=0)
-df = ds.to_dataframe()
-df
+ds.to_dataframe()
 #+END_SRC
 
 #+RESULTS:
