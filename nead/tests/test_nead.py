@@ -17,6 +17,9 @@ def test_read_attrs():
 def test_print():
     ds = nead.read(fname, index_col=0)
     print(ds)
+
+def test_read_KAN_L():
+    ds = nead.read("KAN_L-2009.1-raw.txt")
     
 # def test_read_format():
 #     df = nead.read("sample_csv.dsv")
