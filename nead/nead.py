@@ -76,18 +76,10 @@ def read(neadfile, MKS=None, multi_index=True, index_col=None):
                      comment = "#",
                      names = names,
                      sep = FD,
+                     usecols=np.arange(len(names)),
                      skip_blank_lines = True)
 
-    # ds = df.to_xarray() # should work
-    ## The above line is all that's needed, but this fails on some files - memory fills up
-    ## Building the xarray dataset ourself avoids this failure.
-    ## This is a strange bug. These are not large files.
-    ## KAN_L-2009.1-raw.txt is only 12 MB (!) and my machine has 32 GB RAM
-    ds = xr.Dataset({df.columns[0]: xr.DataArray(data=df[df.columns[0]], dims=['index'], coords={'index':df.index})})
-    for c in df.columns[1:]:
-        ds[c] = (('index'), df[c])
-    ### Done building dataset
-    
+    ds = df.to_xarray()
     ds.attrs = meta
 
     # For each of the per-field properties, add as attributes to that variable.
