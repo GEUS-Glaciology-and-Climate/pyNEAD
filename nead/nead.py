@@ -130,7 +130,7 @@ def read(neadfile, MKS=None, multi_index=True, index_col=None):
 #   style paths with backslashes
 # Arguments:
 #   data_frame    Pandas dataframe
-#   nead_config   string with Path to NEAD configuration file, ex. r'C:\Users\Icy\gcnet\config\nead_header.ini'
+#   nead_header   string with Path to NEAD header file, ex. r'C:\Users\Icy\gcnet\header\nead_header.ini'
 #   output_path   string with Path assigned to output NEAD file,
 #                 be sure to designate name for new NEAD file at end of string
 #                 ex.  r'C:\Icy\gcnet\output\nead\my_nead_file_name')
@@ -138,34 +138,34 @@ from io import StringIO
 import configparser
 from pathlib import Path
 
-def read_config(config_path: str):
-    config_file = Path(config_path)
+def read_header(header_path: str):
+    header_file = Path(header_path)
 
     # Load configuration file
-    config = configparser.RawConfigParser(inline_comment_prefixes='#', allow_no_value=True)
-    config.read(config_file)
+    header = configparser.RawConfigParser(inline_comment_prefixes='#', allow_no_value=True)
+    header.read(header_file)
 
-    if len(config.sections()) < 1:
-        print("Invalid config file, missing sections")
+    if len(header.sections()) < 1:
+        print("Invalid header file, missing sections")
         return None
-    return config
+    return header
 
-# Assign hash_lines with config lines prepended with '# '
-def get_hashed_lines(config):
+# Assign hash_lines with header lines prepended with '# '
+def get_hashed_lines(header):
     hash_lines = []
-    for line in config.replace('\r\n', '\n').split('\n'):
+    for line in header.replace('\r\n', '\n').split('\n'):
         line = '# ' + line + '\n'
         hash_lines.append(line)
     return hash_lines
 
-def write(data_frame, nead_config, output_path):
+def write(data_frame, nead_header, output_path):
     # Assign nead_output to output_path with .csv extension
     nead_output = Path('{0}'.format(output_path))
 
-    # Read nead_config into conf
-    conf = read_config(Path(nead_config))
+    # Read nead_header into conf
+    conf = read_header(Path(nead_header))
 
-    # Assign fields from nead_config 'fields', convert to list in fields_list
+    # Assign fields from nead_header 'fields', convert to list in fields_list
     fields =conf.get('FIELDS', 'fields')
     fields_list = fields.replace(" ", "").split(',')
 
@@ -173,7 +173,7 @@ def write(data_frame, nead_config, output_path):
     buffer = StringIO()
     conf.write(buffer)
 
-    # Assign hash_lines with nead_config lines prepended with '# '
+    # Assign hash_lines with nead_header lines prepended with '# '
     hash_lines = get_hashed_lines(buffer.getvalue())
 
     # Write hash_lines into nead_header

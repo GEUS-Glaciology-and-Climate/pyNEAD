@@ -25,7 +25,7 @@ def test_write():
     ds = nead.read(fname, index_col=0, MKS=True)
     df = ds.to_dataframe()
     df = df.reset_index()
-    nead.write(df, nead_config = 'sample_header.ini', output_path = 'sample_out.csv')
+    nead.write(df, nead_header = 'sample_header.ini', output_path = 'sample_out.csv')
 
     ds2 = nead.read('sample_out.csv', index_col=0, MKS=True)
     print(ds2)
