@@ -18,8 +18,18 @@ def test_print():
     ds = nead.read(fname, index_col=0)
     print(ds)
 
-def test_read_KAN_L():
-    ds = nead.read("KAN_L-2009.1-raw.txt")
+# def test_read_KAN_L():
+#     ds = nead.read("KAN_L-2009.1-raw.txt")
+    
+def test_write():
+    ds = nead.read(fname, index_col=0, MKS=True)
+    df = ds.to_dataframe()
+    df = df.reset_index()
+    nead.write(df, nead_config = 'sample_header.ini', output_path = 'sample_out.csv')
+
+    ds2 = nead.read('sample_out.csv', index_col=0, MKS=True)
+    print(ds2)
+
     
 # def test_read_format():
 #     df = nead.read("sample_csv.dsv")
