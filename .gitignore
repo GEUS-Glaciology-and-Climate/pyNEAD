@@ -4,3 +4,5 @@ __pycache__/
 *$py.class
 *.bak
 sample_out.csv
+processed_header.ini
+sample_processed.csv

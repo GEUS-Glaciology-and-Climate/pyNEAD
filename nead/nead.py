@@ -190,8 +190,28 @@ def write_header(header_file_name, df,  metadata = ('metadata_name', 'metadata_v
                 display_description = '', database_fields = '', 
                 database_fields_data_types = ''):
     # minimalistic NEAD header writing
-    # REQUIRES: header_file_name, df, units
-    # exemple:
+    # Input: 
+    #     header_file_name
+    #           REQUIRED, string where the header ini file is saved
+    #     df
+    #           REQUIRED, dataframe containing the data. timestamp should be column, not index
+    #     units
+    #           REQUIRED, list of string, one for each column in df
+    #     fields
+    #           list of strings, length equals the number of columns in df, default is column names in df
+    #     display_description
+    #           list of strings, length equals the number of columns in df,default is column names in df
+    #     database_fields
+    #           list of strings, length equals the number of columns in df,default is column names in df
+    #     database_fields
+    #           list of strings, length equals the number of columns in df,default is column names in df
+    #     database_fields_data_types
+    #           list of strings, length equals the number of columns in df, default is df.dtypes
+    #     add_value
+    #           list of strings, length equals the number of columns in df, default is list of '0'
+    #     scale_factor
+    #           list of strings, length equals the number of columns in df, default is list of '1'
+    #
     
     # default values
     if len(fields) == 0:
@@ -235,4 +255,5 @@ def write_header(header_file_name, df,  metadata = ('metadata_name', 'metadata_v
         nead_header.write('display_description = '+','.join(display_description)+'\n')
         nead_header.write('database_fields = '+','.join(database_fields)+'\n')
         nead_header.write('database_fields_data_types = '+','.join(database_fields_data_types)+'\n')
+        nead_header.write('[DATA]\n')
 
