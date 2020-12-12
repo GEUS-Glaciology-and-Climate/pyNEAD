@@ -42,6 +42,7 @@ def read(neadfile, MKS=None, multi_index=True, index_col=None):
         section = 'meta'
         while True:
             line = f.readline()
+            if line.strip(' ') == '#': continue
             if line == "# [DATA]\n": break # done reading header
             if line == "# [FIELDS]\n":
                 section = 'fields'
@@ -51,8 +52,8 @@ def read(neadfile, MKS=None, multi_index=True, index_col=None):
             assert(line[0] == "#")         # if not blank, must start with "#"
             
             key_eq_val = line.split("#")[1].strip()
-            if key_eq_val == "": continue  # Line is just "#" or "# " or "#   #"...
-            assert("=" in key_eq_val)
+            if key_eq_val == '' or key_eq_val == None: continue  # Line is just "#" or "# " or "#   #"...
+            assert("=" in key_eq_val), print(line, key_eq_val)
             key = key_eq_val.split("=")[0].strip()
             val = key_eq_val.split("=")[1].strip()
 
@@ -83,8 +84,10 @@ def read(neadfile, MKS=None, multi_index=True, index_col=None):
     ds.attrs = meta
 
     # For each of the per-field properties, add as attributes to that variable.
-    for key in fields.keys():
-        assert(len(fields[key].split(FD)) == len(names))
+    for key in fields.keys():      
+        assert(len(fields[key].split(FD)) == len(names)), print('Error reading NEAD file: ',
+                                                                key,' has ',
+              len(fields[key].split(FD)),'items for ',len(names),' fields')
         arr = [_.strip() for _ in fields[key].split(FD)]
         # convert to numeric if only contains numbers
         if all([str(s).strip('-').strip('+').replace('.','').isdigit() or str(s) == "" for s in arr]):
@@ -98,7 +101,6 @@ def read(neadfile, MKS=None, multi_index=True, index_col=None):
             # print(i,v)
             ds[v].attrs[key] = arr[i]
                 
-
     # Convert to MKS if requested
     if MKS == True:
         assert("scale_factor" in fields.keys())
@@ -106,7 +108,6 @@ def read(neadfile, MKS=None, multi_index=True, index_col=None):
         for v in list(ds.keys()):
             if ds[v].dtype.kind in ['i','f']:
                 ds[v] = (ds[v] * ds[v].scale_factor) + ds[v].add_value
-
 
     # Set index_col if requested
     if index_col != None:
@@ -117,10 +118,7 @@ def read(neadfile, MKS=None, multi_index=True, index_col=None):
             
     # Clean up.
     if('nodata' in ds.attrs.keys()): ds = ds.where(ds != ds.attrs['nodata'])
-
     return ds
-
-
 
 #%% Writes NEAD file (CSV file with NEAD formatted header)
 # Columns written in NEAD output will be the fields designated in the
@@ -185,4 +183,77 @@ def write(data_frame, nead_header, output_path):
     # Append data to header, omit indices, omit dataframe header, and output columns in fields_list
     with open(nead_output, 'a') as nead:
         data_frame.to_csv(nead, index=False, header=False, columns=fields_list, line_terminator='\n')
+        
+#%%        
+def write_header(header_file_name, df,  metadata = ('metadata_name', 'metadata_value'),
+                fields = '', add_value = '', scale_factor = '', units = '',
+                display_description = '', database_fields = '', 
+                database_fields_data_types = ''):
+    # minimalistic NEAD header writing
+    # Input: 
+    #     header_file_name
+    #           REQUIRED, string where the header ini file is saved
+    #     df
+    #           REQUIRED, dataframe containing the data. timestamp should be column, not index
+    #     units
+    #           REQUIRED, list of string, one for each column in df
+    #     fields
+    #           list of strings, length equals the number of columns in df, default is column names in df
+    #     display_description
+    #           list of strings, length equals the number of columns in df,default is column names in df
+    #     database_fields
+    #           list of strings, length equals the number of columns in df,default is column names in df
+    #     database_fields
+    #           list of strings, length equals the number of columns in df,default is column names in df
+    #     database_fields_data_types
+    #           list of strings, length equals the number of columns in df, default is df.dtypes
+    #     add_value
+    #           list of strings, length equals the number of columns in df, default is list of '0'
+    #     scale_factor
+    #           list of strings, length equals the number of columns in df, default is list of '1'
+    #
+    
+    # default values
+    if len(fields) == 0:
+        fields = df.columns
+    if not add_value:
+        add_value = [str(n) for n in np.zeros(np.shape(df.columns), dtype=int)]
+    if not scale_factor:
+        scale_factor = [str(n) for n in np.ones(np.shape(df.columns), dtype=int)]
+    if not display_description:
+        display_description = df.columns
+    if not database_fields:
+        database_fields = df.columns
+    if not database_fields_data_types:
+        database_fields_data_types = ['timestamp'] + [str(s) for s in df.dtypes.values][1:]
+                
+    assert units, print('units need to be specified for each field')
+    # assert database_fields_data_types,\
+    #     print('database_fields_data_types need to be specified for each field')
+    assert len(add_value) == len(fields),\
+        print('add_value has length '+str(len(add_value))+' for '+str(len(fields))+' fields')
+    assert len(scale_factor) == len(fields),\
+        print('scale_factor has length '+str(len(scale_factor))+' for '+str(len(fields))+' fields')
+    assert len(units) == len(fields),\
+        print('units has length '+str(len(units))+' for '+str(len(fields))+' fields')
+    assert len(display_description) == len(fields),\
+        print('display_description has length '+str(len(display_description))+' for '+str(len(fields))+' fields')
+    assert len(database_fields) == len(fields),\
+        print('database_fields has length '+str(len(database_fields))+' for '+str(len(fields))+' fields')
+    assert len(database_fields_data_types) == len(fields),\
+        print('database_fields_data_types has length '+str(len(database_fields_data_types))+' for '+str(len(fields))+' fields')
+    
+    with open(header_file_name, 'w', newline='\n') as nead_header:
+        nead_header.write('[METADATA]\n')
+        for k in metadata.keys():
+            nead_header.write(k+' = '+str(metadata[k])+'\n')
+        nead_header.write('[FIELDS]\n')
+        nead_header.write('fields = '+','.join(fields)+'\n')
+        nead_header.write('add_value = '+','.join(add_value)+'\n')
+        nead_header.write('scale_factor = '+','.join(scale_factor)+'\n')
+        nead_header.write('units = '+','.join(units)+'\n')
+        nead_header.write('display_description = '+','.join(display_description)+'\n')
+        nead_header.write('database_fields = '+','.join(database_fields)+'\n')
+        nead_header.write('database_fields_data_types = '+','.join(database_fields_data_types)+'\n')
+        nead_header.write('[DATA]\n')
 

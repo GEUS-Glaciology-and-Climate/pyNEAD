@@ -29,6 +29,22 @@ def test_write():
 
     ds2 = nead.read('sample_out.csv', index_col=0, MKS=True)
     print(ds2)
+    
+def test_write_header():
+    ds = nead.read(fname, index_col=0, MKS=True)
+    df = ds.to_dataframe()
+    
+    ds.attrs['station_id'] = 'test_station_processed'
+    df['TA_cor'] = df.TA+10
+    df = df.reset_index()
+    nead.write_header('processed_header.ini', df,
+                      metadata = ds.attrs,
+                      fields = df.columns,
+                      units = ['time', 'K','perc', 'ms-1', 'Wm-2', 'K'])
+    nead.write(df, nead_header = 'processed_header.ini', output_path = 'sample_processed.csv')
+
+    ds2 = nead.read('sample_processed.csv', index_col=0, MKS=True)
+    print(ds2)
 
     
 # def test_read_format():
