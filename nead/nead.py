@@ -192,7 +192,7 @@ def write(data_frame, nead_header, output_path):
                           columns=fields_list,
                           float_format='%.2f',
                           line_terminator='\n')
-        
+
 
 def write_header(header_file_name, df,  metadata = ('metadata_name', 'metadata_value'),
                 fields = '', add_value = '', scale_factor = '', units = '',
