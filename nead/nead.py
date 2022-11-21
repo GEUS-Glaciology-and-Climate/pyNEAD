@@ -4,6 +4,9 @@ A Python module for reading and writing NEAD files
 import numpy as np
 import pandas as pd
 import xarray as xr
+from io import StringIO
+import configparser
+from pathlib import Path
 xr.set_options(keep_attrs=True)
 
 def read(neadfile, MKS=None, multi_index=True, index_col=None):
@@ -120,7 +123,8 @@ def read(neadfile, MKS=None, multi_index=True, index_col=None):
     if('nodata' in ds.attrs.keys()): ds = ds.where(ds != ds.attrs['nodata'])
     return ds
 
-#%% Writes NEAD file (CSV file with NEAD formatted header)
+def read_header(header_path: str):
+# Writes NEAD file (CSV file with NEAD formatted header)
 # Columns written in NEAD output will be the fields designated in the
 #   NEAD configuration file setting 'fields' in section 'FIELDS'
 # Paths must be absolute
@@ -132,11 +136,7 @@ def read(neadfile, MKS=None, multi_index=True, index_col=None):
 #   output_path   string with Path assigned to output NEAD file,
 #                 be sure to designate name for new NEAD file at end of string
 #                 ex.  r'C:\Icy\gcnet\output\nead\my_nead_file_name')
-from io import StringIO
-import configparser
-from pathlib import Path
 
-def read_header(header_path: str):
     header_file = Path(header_path)
 
     # Load configuration file
@@ -156,12 +156,16 @@ def get_hashed_lines(header):
         hash_lines.append(line)
     return hash_lines
 
+
 def write(data_frame, nead_header, output_path):
     # Assign nead_output to output_path with .csv extension
     nead_output = Path('{0}'.format(output_path))
 
     # Read nead_header into conf
-    conf = read_header(Path(nead_header))
+    if isinstance(nead_header, str):
+        conf = read_header(Path(nead_header))
+    else:
+        conf = nead_header
 
     # Assign fields from nead_header 'fields', convert to list in fields_list
     fields =conf.get('FIELDS', 'fields')
@@ -182,9 +186,14 @@ def write(data_frame, nead_header, output_path):
 
     # Append data to header, omit indices, omit dataframe header, and output columns in fields_list
     with open(nead_output, 'a') as nead:
-        data_frame.to_csv(nead, index=False, header=False, columns=fields_list, line_terminator='\n')
-        
-#%%        
+        data_frame.to_csv(nead, 
+                          index=False,
+                          header=False,
+                          columns=fields_list,
+                          float_format='%.2f',
+                          line_terminator='\n')
+
+
 def write_header(header_file_name, df,  metadata = ('metadata_name', 'metadata_value'),
                 fields = '', add_value = '', scale_factor = '', units = '',
                 display_description = '', database_fields = '', 
@@ -257,3 +266,55 @@ def write_header(header_file_name, df,  metadata = ('metadata_name', 'metadata_v
         nead_header.write('database_fields_data_types = '+','.join(database_fields_data_types)+'\n')
         nead_header.write('[DATA]\n')
 
+
+def build_header_obj(df,  metadata = ('metadata_name', 'metadata_value'),
+                fields = '', add_value = '', scale_factor = '', units = '',
+                display_description = '', database_fields = '', 
+                database_fields_data_types = ''):
+    # minimalistic NEAD header writing
+    # REQUIRES: header_file_name, df, units
+    
+    # default values
+    if len(fields) == 0:
+        fields = df.columns
+    if not add_value:
+        add_value = [str(n) for n in np.zeros(np.shape(df.columns), dtype=int)]
+    if not scale_factor:
+        scale_factor = [str(n) for n in np.ones(np.shape(df.columns), dtype=int)]
+    if not display_description:
+        display_description = df.columns
+    if not database_fields:
+        database_fields = df.columns
+    if not database_fields_data_types:
+        database_fields_data_types = ['timestamp'] + [str(s) for s in df.dtypes.values][1:]
+    
+    # checking that metadata has appropriate shape
+    assert units, print('units need to be specified for each field')
+    # assert database_fields_data_types,\
+    #     print('database_fields_data_types need to be specified for each field')
+    assert len(add_value) == len(fields),\
+        print('add_value has length '+str(len(add_value))+' for '+str(len(fields))+' fields')
+    assert len(scale_factor) == len(fields),\
+        print('scale_factor has length '+str(len(scale_factor))+' for '+str(len(fields))+' fields')
+    assert len(units) == len(fields),\
+        print('units has length '+str(len(units))+' for '+str(len(fields))+' fields')
+    assert len(display_description) == len(fields),\
+        print('display_description has length '+str(len(display_description))+' for '+str(len(fields))+' fields')
+    assert len(database_fields) == len(fields),\
+        print('database_fields has length '+str(len(database_fields))+' for '+str(len(fields))+' fields')
+    assert len(database_fields_data_types) == len(fields),\
+        print('database_fields_data_types has length '+str(len(database_fields_data_types))+' for '+str(len(fields))+' fields')
+    
+    config = configparser.ConfigParser(interpolation=None)
+    config['METADATA'] = metadata
+    config['FIELDS'] =  {
+        'fields': ','.join(fields),
+        'add_value': ','.join(add_value),
+        'scale_factor': ','.join(scale_factor),
+        'units': ','.join(units),
+        'display_description': ','.join(display_description),
+        'database_fields': ','.join(database_fields),
+        'database_fields_data_types': ','.join(database_fields_data_types)}
+    config['DATA'] = {}
+    return config
+    
