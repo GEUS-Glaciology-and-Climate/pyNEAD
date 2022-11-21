@@ -2,24 +2,23 @@
 
 
 * Table of contents                               :toc_3:noexport:
-- [[#citation][Citation]]
-  - [[#file-format][File format]]
 - [[#warning][WARNING]]
+- [[#the-nead-format][The NEADA format]]
 - [[#installation][Installation]]
+- [[#list-of-functions][List of functions]]
 - [[#usage][Usage]]
 
-* Citation
+* WARNING
++ This is alpha level software under development.
++ Please contact Ken Mankoff <kdm@geus.dk> before using.
+
+* The NEAD format
 
 Iosifescu Enescu, I., Bavay, M., Plattner, G.-K. (2020). Sharing and reusing meteorological data. WMO Data Conference 2020 - Earth System Data Exchange in the 21st Century (Virtual Conference).
 
-** File format
+The NEAD file format is documented at https://github.com/GEUS-PROMICE/NEAD
 
-The NEAD file format is document at https://github.com/GEUS-PROMICE/NEAD
 
-* WARNING
-
-+ This is alpha level software under development.
-+ Please contact Ken Mankoff <kdm@geus.dk> before using.
 
 * Installation
 
@@ -27,15 +26,20 @@ The NEAD file format is document at https://github.com/GEUS-PROMICE/NEAD
 pip install git+https://github.com/GEUS-PROMICE/pyNEAD.git
 #+END_SRC
 
-Can be run in new environment, for example:
 
-Conda:
+* List of functions:
+*** read
 
-#+BEGIN_SRC bash :results verbatim
-conda create -n NEAD python=3.8 pandas numpy xarray # jupyter
-conda activate NEAD
-pip install --upgrade git+https://github.com/GEUS-PROMICE/pyNEAD.git
-#+END_SRC
+*** write
+
+*** read_header
+
+*** write_header
+Takes a set of NEAD file attributes, field names and field attributes and builds an text header file
+
+*** build_header_obj
+Takes a set of NEAD file attributes, field names and field attributes and builds a [configparser](https://docs.python.org/3/library/configparser.html) object that can be used directly by write_nead
+
 
 * Usage
 :PROPERTIES:
