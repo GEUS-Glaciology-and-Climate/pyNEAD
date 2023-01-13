@@ -62,9 +62,9 @@ def read(neadfile, MKS=None, multi_index=True, index_col=None):
 
             # Convert from string to number if it is a number
             if val.strip('-').strip('+').replace('.','').isdigit():
-                val = np.float(val)
-                if val == np.int(val):
-                    val = np.int(val)
+                val = float(val)
+                if val == int(val):
+                    val = int(val)
 
             if section == 'meta': meta[key] = val
             if section == 'fields': fields[key] = val
