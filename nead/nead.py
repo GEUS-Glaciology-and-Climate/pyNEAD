@@ -96,9 +96,9 @@ def read(neadfile, MKS=None, multi_index=True, index_col=None):
         if all([str(s).strip('-').strip('+').replace('.','').isdigit() or str(s) == "" for s in arr]):
             arr = np.array(arr).astype("<U32")
             arr[arr == ""] = 'nan'
-            arr = arr.astype(np.float)
-            if all(arr == arr.astype(np.int)):
-                arr = arr.astype(np.int)
+            arr = arr.astype(float)
+            if all(arr == arr.astype(int)):
+                arr = arr.astype(int)
                     
         for i,v in enumerate(ds.data_vars):
             # print(i,v)
