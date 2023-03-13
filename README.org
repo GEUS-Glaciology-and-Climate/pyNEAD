@@ -1,3 +1,5 @@
+[[https://doi.org/10.5281/zenodo.7728588][https://zenodo.org/badge/DOI/10.5281/zenodo.7728588.svg]]
+
 #+TITLE: pyNEAD - Python interface to NEAD file format
 
 
