@@ -8,6 +8,7 @@ from io import StringIO
 import configparser
 from pathlib import Path
 xr.set_options(keep_attrs=True)
+import codecs
 
 def read(neadfile, MKS=None, multi_index=True, index_col=None):
     """Read a NEAD file
@@ -179,11 +180,11 @@ def write(data_frame, nead_header, output_path):
     hash_lines = get_hashed_lines(buffer.getvalue())
 
     # Write hash_lines into nead_header
-    with open(nead_output, 'w', newline='\n') as nead_header:
-        nead_header.write('# NEAD 1.0 UTF-8\n')
-        for row in hash_lines:
-            nead_header.write(row)
-
+    nead_header = codecs.open(nead_output, "w", "utf-8")
+    nead_header.write('# NEAD 1.0 UTF-8\n')
+    for row in hash_lines:
+        nead_header.write(row)
+    nead_header.close()
     # Append data to header, omit indices, omit dataframe header, and output columns in fields_list
     with open(nead_output, 'a') as nead:
         data_frame.to_csv(nead, 
@@ -191,7 +192,7 @@ def write(data_frame, nead_header, output_path):
                           header=False,
                           columns=fields_list,
                           float_format='%.2f',
-                          line_terminator='\n')
+                          lineterminator='\n')
 
 
 def write_header(header_file_name, df,  metadata = ('metadata_name', 'metadata_value'),
